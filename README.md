@@ -16,6 +16,10 @@ A real-time digital twin system for monitoring, predicting, and optimising campu
 | 🚨 **Anomaly Detection** | Isolation Forest + rule-based fault detection for abnormal energy usage and equipment faults |
 | ⚡ **Solar & Battery Optimizer** | Greedy dispatch optimizer that minimises grid import cost, maximises solar self-consumption |
 | 📊 **Digital Twin Dashboard** | Streamlit web dashboard with real-time charts, KPIs, forecasts, and anomaly alerts |
+| 🎯 **Demand Response System** | **NEW!** Actionable recommendations based on predictions (load shedding, peak shaving, cost optimization) |
+| 📈 **AI Training Dataset Generator** | **NEW!** Generate 70k+ realistic training samples with seasonal patterns, anomalies, and edge cases |
+| 🗺️ **Google Maps Integration** | **NEW!** Interactive campus energy visualization with building-level consumption heatmap |
+| 🔄 **ML Training Pipeline** | **NEW!** Complete workflow for training models with database integration and real-world data |
 
 ---
 
@@ -63,11 +67,13 @@ python -m pytest tests/ -v
 | Document | Description |
 |----------|-------------|
 | **[HACKATHON_GUIDE.md](HACKATHON_GUIDE.md)** | Complete 2-day strategy, team roles, hardware costs (₹710-₹4,000), presentation tips |
+| **[AI_TRAINING_GUIDE.md](AI_TRAINING_GUIDE.md)** | **NEW!** AI training dataset, demand response system, Google Maps integration guide |
 | **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | Print-friendly cheat sheet for hackathon day (commands, troubleshooting, Q&A prep) |
 | **[hardware/README.md](hardware/README.md)** | Hardware integration guide, ESP32 setup, sensor testing |
 | **[hardware/CIRCUIT_DIAGRAMS.md](hardware/CIRCUIT_DIAGRAMS.md)** | Complete wiring diagrams, bill of materials, safety checklist |
 
 **Start here:** Read [HACKATHON_GUIDE.md](HACKATHON_GUIDE.md) for the complete strategy!
+**New features:** Read [AI_TRAINING_GUIDE.md](AI_TRAINING_GUIDE.md) to understand the demand response system!
 
 ---
 
