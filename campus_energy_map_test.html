@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Campus Energy Digital Twin - Map View</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-size: 14px;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .legend-item {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+        }
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 350px;
+        }
+        .info-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .info-stat {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 5px;
+        }
+        .refresh-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Data</button>
+
+    <div class="info-panel">
+        <div class="info-title">🏛️ Campus Energy Overview</div>
+        <div class="info-stat">
+            <div class="stat-label">Total Campus Load</div>
+            <div class="stat-value" id="total-load">-- kW</div>
+        </div>
+        <div class="info-stat">
+            <div class="stat-label">Solar Generation</div>
+            <div class="stat-value" id="solar-gen">-- kW</div>
+        </div>
+        <div class="info-stat">
+            <div class="stat-label">Battery SoC</div>
+            <div class="stat-value" id="battery-soc">-- %</div>
+        </div>
+        <div class="info-stat">
+            <div class="stat-label">Grid Import</div>
+            <div class="stat-value" id="grid-import">-- kW</div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-title">Energy Intensity</div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #28a745;"></div>
+            <span>Low (&lt; 20 W/m²)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ffc107;"></div>
+            <span>Medium (20-40 W/m²)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #fd7e14;"></div>
+            <span>High (40-60 W/m²)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #dc3545;"></div>
+            <span>Very High (&gt; 60 W/m²)</span>
+        </div>
+        <hr style="margin: 15px 0;">
+        <div class="legend-title">Sensors</div>
+        <div class="legend-item">
+            <span style="font-size: 20px; margin-right: 10px;">☀️</span>
+            <span>Solar Panels</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 20px; margin-right: 10px;">🔋</span>
+            <span>Battery Storage</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 20px; margin-right: 10px;">⚡</span>
+            <span>Grid Connection</span>
+        </div>
+    </div>
+
+    <script>
+        // Energy data
+        const buildingData = [{"id": "B1", "name": "Engineering Block", "lat": 12.972, "lng": 77.594, "type": "academic", "area": 5000, "current_load": 41.32764919954862, "typical_load": 150}, {"id": "B2", "name": "Science Labs", "lat": 12.9718, "lng": 77.595, "type": "academic", "area": 3000, "current_load": 29.755907423675, "typical_load": 120}, {"id": "B3", "name": "Library", "lat": 12.9715, "lng": 77.5945, "type": "academic", "area": 2000, "current_load": 19.837271615783337, "typical_load": 80}, {"id": "B4", "name": "Student Hostel A", "lat": 12.971, "lng": 77.5935, "type": "residential", "area": 4000, "current_load": 33.06211935963889, "typical_load": 200}, {"id": "B5", "name": "Student Hostel B", "lat": 12.9708, "lng": 77.594, "type": "residential", "area": 4000, "current_load": 24.79658951972917, "typical_load": 200}, {"id": "B6", "name": "Administrative Block", "lat": 12.9722, "lng": 77.5948, "type": "administrative", "area": 2500, "current_load": 9.918635807891668, "typical_load": 100}, {"id": "B7", "name": "Sports Complex", "lat": 12.9712, "lng": 77.5955, "type": "sports", "area": 3500, "current_load": 4.959317903945834, "typical_load": 90}, {"id": "B8", "name": "Auditorium", "lat": 12.9717, "lng": 77.5938, "type": "events", "area": 1500, "current_load": 1.6531059679819446, "typical_load": 60}];
+
+        const sensorData = [{"id": "S1", "name": "Solar Array 1 (Rooftop)", "lat": 12.972, "lng": 77.594, "type": "solar", "value": 150, "unit": "kW"}, {"id": "S2", "name": "Solar Array 2 (Parking)", "lat": 12.971, "lng": 77.5938, "type": "solar", "value": 100, "unit": "kW"}, {"id": "S3", "name": "Battery Storage", "lat": 12.9716, "lng": 77.5942, "type": "battery", "value": 75, "unit": "% SoC"}, {"id": "S4", "name": "Main Grid Connection", "lat": 12.9716, "lng": 77.5946, "type": "meter", "value": 180, "unit": "kW"}, {"id": "S5", "name": "Weather Station", "lat": 12.9716, "lng": 77.5946, "type": "weather", "value": 28, "unit": "\u00b0C"}];
+
+        const campusCenter = {lat: 12.9716, lng: 77.5946};
+
+        function initMap() {
+            // Create map
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 16,
+                center: campusCenter,
+                mapTypeId: 'satellite',
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            // Calculate total stats
+            let totalLoad = 0;
+            let solarGen = 0;
+            let batterySoc = 0;
+            let gridImport = 0;
+
+            // Add building markers
+            buildingData.forEach(building => {
+                const intensity = (building.current_load * 1000) / building.area;
+                let color;
+                if (intensity < 20) color = '#28a745';
+                else if (intensity < 40) color = '#ffc107';
+                else if (intensity < 60) color = '#fd7e14';
+                else color = '#dc3545';
+
+                const marker = new google.maps.Marker({
+                    position: {lat: building.lat, lng: building.lng},
+                    map: map,
+                    title: building.name,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: color,
+                        fillOpacity: 0.8,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2
+                    }
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${building.name}</h3>
+                            <p style="margin: 5px 0;"><strong>Type:</strong> ${building.type}</p>
+                            <p style="margin: 5px 0;"><strong>Floor Area:</strong> ${building.area.toLocaleString()} m²</p>
+                            <p style="margin: 5px 0;"><strong>Current Load:</strong> <span style="color: ${color}; font-weight: bold;">${building.current_load.toFixed(1)} kW</span></p>
+                            <p style="margin: 5px 0;"><strong>Intensity:</strong> ${intensity.toFixed(1)} W/m²</p>
+                            <p style="margin: 5px 0; font-size: 11px; color: #6c757d;">Typical: ${building.typical_load.toFixed(1)} kW</p>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+
+                totalLoad += building.current_load;
+            });
+
+            // Add sensor markers
+            sensorData.forEach(sensor => {
+                let icon;
+                if (sensor.type === 'solar') {
+                    icon = '☀️';
+                    solarGen += sensor.value;
+                } else if (sensor.type === 'battery') {
+                    icon = '🔋';
+                    batterySoc = sensor.value;
+                } else if (sensor.type === 'meter') {
+                    icon = '⚡';
+                    gridImport = sensor.value;
+                } else if (sensor.type === 'weather') {
+                    icon = '🌡️';
+                } else {
+                    icon = '📊';
+                }
+
+                const marker = new google.maps.Marker({
+                    position: {lat: sensor.lat, lng: sensor.lng},
+                    map: map,
+                    title: sensor.name,
+                    label: {
+                        text: icon,
+                        fontSize: '24px'
+                    }
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${sensor.name}</h3>
+                            <p style="margin: 5px 0;"><strong>Type:</strong> ${sensor.type}</p>
+                            <p style="margin: 5px 0;"><strong>Current Value:</strong> <span style="font-size: 18px; font-weight: bold; color: #007bff;">${sensor.value.toFixed(1)} ${sensor.unit}</span></p>
+                            <p style="margin: 5px 0; font-size: 11px; color: #6c757d;">Click refresh button to update</p>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+            });
+
+            // Update summary stats
+            document.getElementById('total-load').textContent = totalLoad.toFixed(1) + ' kW';
+            document.getElementById('solar-gen').textContent = solarGen.toFixed(1) + ' kW';
+            document.getElementById('battery-soc').textContent = batterySoc.toFixed(1) + ' %';
+            document.getElementById('grid-import').textContent = gridImport.toFixed(1) + ' kW';
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>
